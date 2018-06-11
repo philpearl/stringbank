@@ -1,6 +1,7 @@
 package stringbank
 
 import (
+	"fmt"
 	"runtime"
 	"strconv"
 	"testing"
@@ -92,4 +93,17 @@ func BenchmarkStringbank(b *testing.B) {
 	if out != s[b.N-1] {
 		b.Fatalf("final string should be %s, is %s", s[b.N-1], out)
 	}
+}
+
+func ExampleSave() {
+	i := Save("hello")
+	fmt.Println(i)
+	// Output: hello
+}
+
+func ExampleStringbank() {
+	sb := Stringbank{}
+	i := sb.Save("goodbye")
+	fmt.Println(sb.Get(i))
+	// Output: goodbye
 }
