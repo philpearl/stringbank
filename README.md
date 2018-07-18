@@ -1,3 +1,5 @@
+# stringbank
+
 [![GoDoc](https://godoc.org/github.com/philpearl/stringbank?status.svg)](https://godoc.org/github.com/philpearl/stringbank) 
 [![Build Status](https://travis-ci.org/philpearl/stringbank.svg)](https://travis-ci.org/philpearl/stringbank)
 
