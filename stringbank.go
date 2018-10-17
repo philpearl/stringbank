@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-const stringbankSize = 1 << 20 // about 1m as a power of 2
+const stringbankSize = 1 << 18 // about 250k as a power of 2
 
 var packageBank Stringbank
 
