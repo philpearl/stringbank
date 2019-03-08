@@ -33,6 +33,12 @@ type Stringbank struct {
 	allocations [][]byte
 }
 
+// Size returns the approximate number of bytes in the string bank. The estimate includes currently unused and
+// wasted space
+func (s *Stringbank) Size() int {
+	return len(s.allocations) * stringbankSize
+}
+
 // Get converts an index to the original string
 func (s *Stringbank) Get(index int) string {
 	// read the length and string from the data

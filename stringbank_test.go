@@ -22,6 +22,13 @@ func TestStringbank(t *testing.T) {
 	assert.Equal(t, "cheese", sb.Get(s3))
 }
 
+func TestStringbankSize(t *testing.T) {
+	sb := Stringbank{}
+	assert.Zero(t, sb.Size())
+	sb.Save("hello")
+	assert.Equal(t, stringbankSize, sb.Size())
+}
+
 func TestPackageBank(t *testing.T) {
 	s1 := Save("hello")
 	s2 := Save("goodbye")
