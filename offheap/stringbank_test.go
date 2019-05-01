@@ -12,6 +12,7 @@ import (
 
 func TestStringbank(t *testing.T) {
 	sb := Stringbank{}
+	defer sb.Close()
 
 	s1 := sb.Save("hello")
 	s2 := sb.Save("goodbye")
@@ -24,6 +25,7 @@ func TestStringbank(t *testing.T) {
 
 func TestStringbankSize(t *testing.T) {
 	sb := Stringbank{}
+	defer sb.Close()
 	assert.Zero(t, sb.Size())
 	sb.Save("hello")
 	assert.Equal(t, stringbankSize, sb.Size())
@@ -57,6 +59,7 @@ func TestLengths(t *testing.T) {
 
 func TestGC(t *testing.T) {
 	sb := Stringbank{}
+	defer sb.Close()
 	for i := 0; i < 10000000; i++ {
 		sb.Save(strconv.Itoa(i))
 	}
@@ -79,6 +82,7 @@ func BenchmarkStringbank(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	sb := Stringbank{}
+	defer sb.Close()
 	for i, v := range s {
 		index[i] = sb.Save(v)
 	}
@@ -94,6 +98,7 @@ func BenchmarkStringbank(b *testing.B) {
 
 func ExampleStringbank() {
 	sb := Stringbank{}
+	defer sb.Close()
 	i := sb.Save("goodbye")
 	fmt.Println(sb.Get(i))
 	// Output: goodbye
