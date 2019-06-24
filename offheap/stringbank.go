@@ -1,4 +1,4 @@
-// Package offheap is an off-heap implementation of stringbank. Memory to back the strings is allocated 
+// Package offheap is an off-heap implementation of stringbank. Memory to back the strings is allocated
 // in chunks directly from the OS
 package offheap
 
@@ -27,6 +27,8 @@ func (s *Stringbank) Close() error {
 			return err
 		}
 	}
+	s.allocations = nil
+	s.current = nil
 	return nil
 }
 

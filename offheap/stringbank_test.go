@@ -23,6 +23,20 @@ func TestStringbank(t *testing.T) {
 	assert.Equal(t, "cheese", sb.Get(s3))
 }
 
+func TestCloseAbuse(t *testing.T) {
+	sb := Stringbank{}
+	defer sb.Close()
+
+	s1 := sb.Save("hello")
+
+	assert.Equal(t, "hello", sb.Get(s1))
+
+	sb.Close()
+
+	s1 = sb.Save("hello")
+	assert.Equal(t, "hello", sb.Get(s1))
+}
+
 func TestStringbankSize(t *testing.T) {
 	sb := Stringbank{}
 	defer sb.Close()
