@@ -43,8 +43,12 @@ func (s *Stringbank) Get(index int) string {
 	// read the length and string from the data
 	data := s.allocations[index/stringbankSize]
 	offset := index % stringbankSize
-	l, llen := readLength(data[offset:])
+	if l := data[offset]; l&0x80 == 0 {
+		b := data[offset+1 : offset+1+int(l)]
+		return *(*string)(unsafe.Pointer(&b))
 
+	}
+	l, llen := readLength(data[offset:])
 	b := data[offset+llen : offset+llen+l]
 	return *(*string)(unsafe.Pointer(&b))
 }
@@ -52,6 +56,15 @@ func (s *Stringbank) Get(index int) string {
 // Save copies a string into the Stringbank, and returns the index of the string in the bank
 func (s *Stringbank) Save(tocopy string) int {
 	l := len(tocopy)
+	if l <= 0x7F {
+		// fast-track easy case
+		offset, buf := s.reserve(l + 1)
+		// write length
+		buf[0] = byte(l)
+		// write data
+		copy(buf[1:], tocopy)
+		return offset
+	}
 	offset, buf := s.reserve(l + spaceForLength(l))
 	// Write the length
 	start := writeLength(l, buf)
@@ -99,11 +112,12 @@ func writeLength(len int, buf []byte) int {
 
 func readLength(buf []byte) (int, int) {
 	total := 0
-	for i := uint(0); ; i++ {
-		val := buf[i]
-		total += int(val&0x7F) << (7 * i)
+	for i, val := range buf {
+		total += int(val&0x7F) << (7 * uint(i))
 		if val&0x80 == 0 {
 			return total, int(i + 1)
 		}
 	}
+	// Shouldn't get here as the buffer should always be big enough
+	panic("read length overrun")
 }
