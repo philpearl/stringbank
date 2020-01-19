@@ -1,4 +1,4 @@
-module github.com/philpearl/stringbank
+module github.com/ou05020/stringbank
 
 go 1.12
 
