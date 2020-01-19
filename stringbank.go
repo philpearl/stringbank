@@ -74,6 +74,9 @@ func (s *Stringbank) reserve(l int) (index int, data []byte) {
 }
 
 func spaceForLength(len int) int {
+	if len == 0 {
+		return 1
+	}
 	// 7 bits => 1 byte
 	// 8 bits => 2 byte
 	// 1
