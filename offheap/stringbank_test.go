@@ -74,7 +74,7 @@ func TestLengths(t *testing.T) {
 func TestGC(t *testing.T) {
 	sb := Stringbank{}
 	defer sb.Close()
-	for i := 0; i < 10000000; i++ {
+	for i := range 10000000 {
 		sb.Save(strconv.Itoa(i))
 	}
 	runtime.GC()

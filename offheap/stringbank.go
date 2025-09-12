@@ -4,7 +4,6 @@ package offheap
 
 import (
 	"math/bits"
-	"reflect"
 	"unsafe"
 
 	"github.com/philpearl/mmap"
@@ -23,7 +22,7 @@ type Stringbank struct {
 // Close releases resources associated with the StringBank
 func (s *Stringbank) Close() error {
 	for _, allocation := range s.allocations {
-		if err := mmap.Free(*(*reflect.SliceHeader)(unsafe.Pointer(&allocation)), 1); err != nil {
+		if err := mmap.Free(allocation); err != nil {
 			return err
 		}
 	}
@@ -77,8 +76,8 @@ func (s *Stringbank) Save(tocopy string) int {
 // reserve finds a contiguous space of length l that can be used for writing data
 func (s *Stringbank) reserve(l int) (index int, data []byte) {
 	if len(s.current)+l > cap(s.current) {
-		slice, _ := mmap.Alloc(1, stringbankSize)
-		s.current = *(*[]byte)(unsafe.Pointer(&slice))
+		slice, _ := mmap.Alloc[byte](stringbankSize)
+		s.current = slice[:0]
 		s.allocations = append(s.allocations, s.current[0:stringbankSize])
 	}
 	offset := len(s.current)
