@@ -67,7 +67,7 @@ func TestLengths(t *testing.T) {
 
 func TestGC(t *testing.T) {
 	sb := Stringbank{}
-	for i := 0; i < 10000000; i++ {
+	for i := range 10000000 {
 		sb.Save(strconv.Itoa(i))
 	}
 	runtime.GC()
@@ -76,6 +76,14 @@ func TestGC(t *testing.T) {
 	runtime.GC()
 	assert.True(t, time.Since(start) < 1000*time.Microsecond)
 	runtime.KeepAlive(sb)
+
+	i := 0
+	for s := range sb.All() {
+		if s != strconv.Itoa(i) {
+			t.Fatalf("expected %s, got %s", strconv.Itoa(i), s)
+		}
+		i++
+	}
 }
 
 func BenchmarkStringbank(b *testing.B) {

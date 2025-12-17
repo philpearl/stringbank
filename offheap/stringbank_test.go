@@ -83,6 +83,14 @@ func TestGC(t *testing.T) {
 	runtime.GC()
 	assert.True(t, time.Since(start) < 1000*time.Microsecond)
 	runtime.KeepAlive(sb)
+
+	i := 0
+	for s := range sb.All() {
+		if s != strconv.Itoa(i) {
+			t.Fatalf("expected %s, got %s", strconv.Itoa(i), s)
+		}
+		i++
+	}
 }
 
 func BenchmarkStringbank(b *testing.B) {

@@ -5,6 +5,7 @@ garbage collector. For small strings storage is reduced as the lengths are encod
 package stringbank
 
 import (
+	"iter"
 	"math/bits"
 	"unsafe"
 )
@@ -104,6 +105,34 @@ func readLength(buf []byte) (int, int) {
 		total += int(val&0x7F) << (7 * i)
 		if val&0x80 == 0 {
 			return total, int(i + 1)
+		}
+	}
+}
+
+// All returns an iterator over all strings in the Stringbank
+func (s *Stringbank) All() iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for _, allocation := range s.allocations {
+			offset := 0
+			for offset < len(allocation) {
+				if allocation[offset] == 0 {
+					break
+				}
+				var slen int
+				var llen int
+				if allocation[offset]&0x80 == 0 {
+					slen = int(allocation[offset])
+					llen = 1
+				} else {
+					slen, llen = readLength(allocation[offset:])
+				}
+				strBytes := allocation[offset+llen : offset+llen+slen]
+				str := *(*string)(unsafe.Pointer(&strBytes))
+				if !yield(str) {
+					return
+				}
+				offset += llen + slen
+			}
 		}
 	}
 }
