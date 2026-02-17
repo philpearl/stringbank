@@ -2,6 +2,8 @@ package offheap
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"runtime"
 	"strconv"
 	"testing"
@@ -68,6 +70,78 @@ func TestLengths(t *testing.T) {
 			assert.Equal(t, l, lenlen)
 			assert.Equal(t, test.len, len)
 		})
+	}
+}
+
+func TestPersist(t *testing.T) {
+	sb := Stringbank{}
+	defer sb.Close()
+
+	const numStrings = 1_000_000
+	offsets := make([]int, numStrings)
+
+	for i := range numStrings {
+		offsets[i] = sb.Save(strconv.Itoa(i))
+	}
+
+	dir := t.TempDir()
+	path := fmt.Sprintf("%s/stringbank.dat", dir)
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+	defer f.Close()
+
+	if err := sb.Persist(f); err != nil {
+		t.Fatalf("failed to persist stringbank: %v", err)
+	}
+
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		t.Fatalf("failed to seek file: %v", err)
+	}
+
+	loaded, err := LoadStringbank(f)
+	if err != nil {
+		t.Fatalf("failed to load stringbank: %v", err)
+	}
+	defer loaded.Close()
+
+	for i := range numStrings {
+		expected := strconv.Itoa(i)
+		if got := loaded.Get(offsets[i]); got != expected {
+			t.Fatalf("expected %s, got %s", expected, got)
+		}
+	}
+}
+
+func TestEmptyPersist(t *testing.T) {
+	sb := Stringbank{}
+	defer sb.Close()
+
+	dir := t.TempDir()
+	path := fmt.Sprintf("%s/stringbank.dat", dir)
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+	defer f.Close()
+
+	if err := sb.Persist(f); err != nil {
+		t.Fatalf("failed to persist stringbank: %v", err)
+	}
+
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		t.Fatalf("failed to seek file: %v", err)
+	}
+
+	loaded, err := LoadStringbank(f)
+	if err != nil {
+		t.Fatalf("failed to load stringbank: %v", err)
+	}
+	defer loaded.Close()
+
+	if loaded.Size() != 0 {
+		t.Fatalf("expected size 0, got %d", loaded.Size())
 	}
 }
 

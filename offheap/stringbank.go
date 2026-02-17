@@ -3,6 +3,8 @@
 package offheap
 
 import (
+	"fmt"
+	"io"
 	"iter"
 	"math/bits"
 	"unsafe"
@@ -144,4 +146,77 @@ func (s *Stringbank) All() iter.Seq[string] {
 			}
 		}
 	}
+}
+
+const persistTag = "STRINGBANK_V1"
+
+// Persist writes the contents of the Stringbank to an io.Writer. The format is just a dump of the underlying
+// byte slices, so it can be read back in with LoadStringbank
+func (s *Stringbank) Persist(w io.Writer) error {
+	if _, err := w.Write([]byte(persistTag)); err != nil {
+		return err
+	}
+	for _, allocation := range s.allocations {
+		if _, err := w.Write(allocation[:]); err != nil {
+			return fmt.Errorf("writing stringbank data: %w", err)
+		}
+	}
+	return nil
+}
+
+// LoadStringbank reads a Stringbank from an io.Reader, and returns a new
+// Stringbank with the same contents. The format is just a dump of the
+// underlying byte slices, so it can be written with Persist.
+func LoadStringbank(r io.Reader) (*Stringbank, error) {
+	tag := make([]byte, len(persistTag))
+	if _, err := io.ReadFull(r, tag); err != nil {
+		return nil, err
+	}
+	if string(tag) != persistTag {
+		return nil, fmt.Errorf("invalid persist tag: %s", string(tag))
+	}
+
+	var allocations []*[stringbankSize]byte
+	for {
+		slice, err := mmap.Alloc[byte](stringbankSize)
+		if err != nil {
+			return nil, fmt.Errorf("allocating memory: %w", err)
+		}
+		n, err := io.ReadFull(r, slice[:])
+		if err == io.ErrUnexpectedEOF || err == io.EOF {
+			if n > 0 {
+				allocations = append(allocations, (*[stringbankSize]byte)(slice))
+			} else {
+				mmap.Free(slice[:])
+			}
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("reading stringbank data: %w", err)
+		}
+		allocations = append(allocations, (*[stringbankSize]byte)(slice))
+	}
+
+	if len(allocations) == 0 {
+		return &Stringbank{}, nil
+	}
+
+	current := allocations[len(allocations)-1][:]
+	// find the end of the last string in the current allocation
+	offset := 0
+	for offset < len(current) {
+		if current[offset] == 0 {
+			break
+		}
+		var slen int
+		var llen int
+		if current[offset]&0x80 == 0 {
+			slen = int(current[offset])
+			llen = 1
+		} else {
+			slen, llen = readLength(current[offset:])
+		}
+		offset += llen + slen
+	}
+
+	return &Stringbank{allocations: allocations, current: current[:offset]}, nil
 }
