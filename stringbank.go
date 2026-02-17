@@ -47,8 +47,7 @@ func (s *Stringbank) Get(index int) string {
 	offset := index % stringbankSize
 	l, llen := readLength(data[offset:])
 
-	b := data[offset+llen : offset+llen+l]
-	return *(*string)(unsafe.Pointer(&b))
+	return unsafe.String(&data[offset+llen], l)
 }
 
 // Save copies a string into the Stringbank, and returns the index of the string in the bank
@@ -127,8 +126,7 @@ func (s *Stringbank) All() iter.Seq[string] {
 				} else {
 					slen, llen = readLength(allocation[offset:])
 				}
-				strBytes := allocation[offset+llen : offset+llen+slen]
-				str := *(*string)(unsafe.Pointer(&strBytes))
+				str := unsafe.String(&allocation[offset+llen], slen)
 				if !yield(str) {
 					return
 				}
