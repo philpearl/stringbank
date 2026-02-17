@@ -31,7 +31,7 @@ func Save(val string) Index {
 // garbage collector. The offset can be exchanged for the original string via a call to Get
 type Stringbank struct {
 	current     []byte
-	allocations [][]byte
+	allocations []*[stringbankSize]byte
 }
 
 // Size returns the approximate number of bytes in the string bank. The estimate includes currently unused and
@@ -66,8 +66,9 @@ func (s *Stringbank) Save(tocopy string) int {
 // reserve finds a contiguous space of length l that can be used for writing data
 func (s *Stringbank) reserve(l int) (index int, data []byte) {
 	if len(s.current)+l > cap(s.current) {
-		s.current = make([]byte, 0, stringbankSize)
-		s.allocations = append(s.allocations, s.current[0:stringbankSize])
+		current := make([]byte, stringbankSize)
+		s.allocations = append(s.allocations, (*[stringbankSize]byte)(current))
+		s.current = current[:0]
 	}
 	offset := len(s.current)
 	s.current = s.current[:offset+l]

@@ -17,13 +17,13 @@ const stringbankSize = 1 << 18 // about 250k as a power of 2
 // garbage collector. The offset can be exchanged for the original string via a call to Get
 type Stringbank struct {
 	current     []byte
-	allocations [][]byte
+	allocations []*[stringbankSize]byte
 }
 
 // Close releases resources associated with the StringBank
 func (s *Stringbank) Close() error {
 	for _, allocation := range s.allocations {
-		if err := mmap.Free(allocation); err != nil {
+		if err := mmap.Free(allocation[:]); err != nil {
 			return err
 		}
 	}
@@ -79,7 +79,7 @@ func (s *Stringbank) reserve(l int) (index int, data []byte) {
 	if len(s.current)+l > cap(s.current) {
 		slice, _ := mmap.Alloc[byte](stringbankSize)
 		s.current = slice[:0]
-		s.allocations = append(s.allocations, s.current[0:stringbankSize])
+		s.allocations = append(s.allocations, (*[stringbankSize]byte)(slice))
 	}
 	offset := len(s.current)
 	s.current = s.current[:offset+l]
