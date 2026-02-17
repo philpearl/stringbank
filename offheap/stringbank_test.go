@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestStringbank(t *testing.T) {
@@ -20,9 +18,15 @@ func TestStringbank(t *testing.T) {
 	s2 := sb.Save("goodbye")
 	s3 := sb.Save("cheese")
 
-	assert.Equal(t, "hello", sb.Get(s1))
-	assert.Equal(t, "goodbye", sb.Get(s2))
-	assert.Equal(t, "cheese", sb.Get(s3))
+	if got := sb.Get(s1); got != "hello" {
+		t.Errorf("expected %q, got %q", "hello", got)
+	}
+	if got := sb.Get(s2); got != "goodbye" {
+		t.Errorf("expected %q, got %q", "goodbye", got)
+	}
+	if got := sb.Get(s3); got != "cheese" {
+		t.Errorf("expected %q, got %q", "cheese", got)
+	}
 }
 
 func TestCloseAbuse(t *testing.T) {
@@ -31,20 +35,28 @@ func TestCloseAbuse(t *testing.T) {
 
 	s1 := sb.Save("hello")
 
-	assert.Equal(t, "hello", sb.Get(s1))
+	if got := sb.Get(s1); got != "hello" {
+		t.Errorf("expected %q, got %q", "hello", got)
+	}
 
 	sb.Close()
 
 	s1 = sb.Save("hello")
-	assert.Equal(t, "hello", sb.Get(s1))
+	if got := sb.Get(s1); got != "hello" {
+		t.Errorf("expected %q, got %q", "hello", got)
+	}
 }
 
 func TestStringbankSize(t *testing.T) {
 	sb := Stringbank{}
 	defer sb.Close()
-	assert.Zero(t, sb.Size())
+	if sb.Size() != 0 {
+		t.Errorf("expected 0, got %d", sb.Size())
+	}
 	sb.Save("hello")
-	assert.Equal(t, stringbankSize, sb.Size())
+	if sb.Size() != stringbankSize {
+		t.Errorf("expected %d, got %d", stringbankSize, sb.Size())
+	}
 }
 
 func TestLengths(t *testing.T) {
@@ -65,10 +77,16 @@ func TestLengths(t *testing.T) {
 			buf := make([]byte, 10)
 
 			l := writeLength(test.len, buf)
-			assert.Equal(t, l, spaceForLength(test.len))
-			len, lenlen := readLength(buf)
-			assert.Equal(t, l, lenlen)
-			assert.Equal(t, test.len, len)
+			if l != spaceForLength(test.len) {
+				t.Errorf("expected %d, got %d", spaceForLength(test.len), l)
+			}
+			length, lenlen := readLength(buf)
+			if lenlen != l {
+				t.Errorf("expected %d, got %d", l, lenlen)
+			}
+			if length != test.len {
+				t.Errorf("expected %d, got %d", test.len, length)
+			}
 		})
 	}
 }
@@ -155,7 +173,9 @@ func TestGC(t *testing.T) {
 
 	start := time.Now()
 	runtime.GC()
-	assert.True(t, time.Since(start) < 1000*time.Microsecond)
+	if elapsed := time.Since(start); elapsed >= 1000*time.Microsecond {
+		t.Errorf("GC took too long: %v", elapsed)
+	}
 	runtime.KeepAlive(sb)
 
 	i := 0
