@@ -118,8 +118,8 @@ func TestPersist(t *testing.T) {
 		t.Fatalf("failed to seek file: %v", err)
 	}
 
-	loaded, err := LoadStringbank(f)
-	if err != nil {
+	var loaded Stringbank
+	if err := loaded.Load(f); err != nil {
 		t.Fatalf("failed to load stringbank: %v", err)
 	}
 	defer loaded.Close()
@@ -152,8 +152,8 @@ func TestEmptyPersist(t *testing.T) {
 		t.Fatalf("failed to seek file: %v", err)
 	}
 
-	loaded, err := LoadStringbank(f)
-	if err != nil {
+	var loaded Stringbank
+	if err := loaded.Load(f); err != nil {
 		t.Fatalf("failed to load stringbank: %v", err)
 	}
 	defer loaded.Close()
